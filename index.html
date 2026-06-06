@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>在宅状況回覧・管理システム</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* アニメーション用の微調整 */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.5; }
+      100% { transform: scale(0.95); opacity: 1; }
+    }
+    .pulse-dot {
+      animation: pulse-ring 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- ヘッダー -->
+  <header class="bg-indigo-600 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-white text-indigo-600 p-2 rounded-lg shadow">
+          <i class="fa-solid fa-house-laptop text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">ステータス回覧板</h1>
+          <p class="text-xs text-indigo-200">リアルタイム在宅・予定確認システム</p>
+        </div>
+      </div>
+      
+      <!-- ユーザー状態・モード切替 -->
+      <div class="flex items-center gap-3">
+        <span id="user-badge" class="bg-indigo-700 text-indigo-100 text-xs px-3 py-1.5 rounded-full font-mono flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-green-400"></span>
+          接続中: <span id="my-user-id">接続中...</span>
+        </span>
+        <button id="toggle-mode-btn" class="bg-white text-indigo-600 hover:bg-indigo-50 font-semibold text-sm px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2">
+          <i class="fa-solid fa-lock"></i>
+          <span id="toggle-mode-text">管理画面へログイン</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:py-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    
+    <!-- 左側サイドバー: 現在の閲覧中ユーザー (アクティブユーザー) -->
+    <section class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-fit">
+      <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+        <h2 class="font-bold text-slate-700 flex items-center gap-2">
+          <i class="fa-solid fa-users text-indigo-500"></i>
+          今見ている人
+        </h2>
+        <span id="active-count" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded-full">0人</span>
+      </div>
+      <p class="text-xs text-slate-500 mb-4">このページをリアルタイムで開いているユーザーです。</p>
+      
+      <div id="active-users-list" class="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+        <!-- アクティブユーザーがJSで挿入されます -->
+        <div class="text-center text-slate-400 py-4 text-xs">確認中...</div>
+      </div>
+    </section>
+
+    <!-- 右側メインエリア: 回覧板 or 管理画面 -->
+    <section class="lg:col-span-3 space-y-6">
+      
+      <!-- エラー・通知メッセージ領域 -->
+      <div id="alert-box" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm">
+        <div class="flex items-start">
+          <div class="flex-shrink-0 text-red-500">
+            <i class="fa-solid fa-circle-info text-lg"></i>
+          </div>
+          <div class="ml-3">
+            <p id="alert-message" class="text-sm text-red-800 font-medium"></p>
+          </div>
+          <button onclick="hideAlert()" class="ml-auto text-slate-400 hover:text-slate-600">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- モード表示ヘッダー -->
+      <div class="bg-gradient-to-r from-indigo-50 to-sky-50 rounded-2xl p-6 border border-indigo-100/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <div id="current-mode-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
+            <i class="fa-solid fa-eye"></i> 現在：回覧モード
+          </div>
+          <h2 id="mode-title" class="text-2xl font-black text-slate-800 tracking-tight">みんなの在宅・予定一覧</h2>
+          <p id="mode-desc" class="text-sm text-slate-600 mt-1">「今どこにいるか」「理由」「時間帯」をリアルタイムで回覧・確認できます。</p>
+        </div>
+        <div class="text-right text-xs text-slate-400" id="last-updated-container">
+          最終更新: <span id="global-last-updated">-</span>
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- パスワード入力エリア（管理モード切替用） -->
+      <!-- ============================================ -->
+      <div id="login-section" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-150 transition-all">
+        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-key text-amber-500"></i> 管理画面ログイン
+        </h3>
+        <p class="text-sm text-slate-500 mb-4">予定の変更、新しいメンバーの追加、削除を行うには管理パスワードを入力してください。</p>
+        <div class="flex flex-col sm:flex-row gap-3 max-w-md">
+          <input type="password" id="admin-password" placeholder="パスワードを入力 (デフォルト: admin)" class="flex-grow px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+          <button id="login-submit-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-xl text-sm transition duration-150">
+            認証する
+          </button>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">※ 初期設定パスワードは「<span class="font-mono bg-slate-100 px-1 py-0.5 rounded">admin</span>」です。</p>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- 管理画面（管理者専用・初期非表示） -->
+      <!-- ============================================ -->
+      <div id="admin-view" class="hidden space-y-6">
+        
+        <!-- メンバー新規追加フォーム -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-user-plus text-indigo-500"></i> メンバーを新しく登録する
+          </h3>
+          <form id="add-member-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">名前 <span class="text-red-500">*</span></label>
+                <input type="text" id="new-name" required placeholder="例: 山田 太郎" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">初期ステータス</label>
+                <select id="new-status" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                  <option value="在宅中">🏠 在宅中 (Home)</option>
+                  <option value="外出中">🚗 外出中 (Out)</option>
+                  <option value="帰省中">🚄 帰省中 (Away)</option>
+                  <option value="連絡不可">📴 連絡不可 (Do Not Disturb)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">時間帯 (目安)</label>
+                <input type="text" id="new-time-range" placeholder="例: 9:00 〜 17:00 / 終日" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">どこへ (行き先 / 場所)</label>
+                <input type="text" id="new-destination" placeholder="例: 自宅, 東京支社, 買い物" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">理由 / メモ (用事・詳細)</label>
+                <input type="text" id="new-reason" placeholder="例: リモートワーク、クライアント商談、帰省のため" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+              <button type="submit" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition duration-150 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-check"></i> メンバーを登録
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 登録メンバー管理・編集リスト -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-user-gear text-indigo-500"></i> 各メンバーの状況を変更
+            </h3>
+            <span class="text-xs text-slate-400">変更は回覧板にリアルタイム反映されます</span>
+          </div>
+
+          <div id="admin-members-container" class="space-y-4">
+            <!-- JSで動的に追加されます -->
+            <div class="text-center text-slate-400 py-8">
+              <i class="fa-solid fa-spinner animate-spin text-2xl text-indigo-500 mb-2 block"></i>
+              メンバーデータをロード中...
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================ -->
+      <!-- 回覧画面（メイン閲覧用） -->
+      <!-- ============================================ -->
+      <div id="viewer-view" class="space-y-6">
+        
+        <!-- 状況フィルター & 統計 -->
+        <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="filterStatus('all')" class="filter-btn bg-slate-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition">すべて</button>
+            <button onclick="filterStatus('在宅中')" class="filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition">🏠 在宅中</button>
+            <button onclick="filterStatus('外出中')" class="filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition">🚗 外出中</button>
+            <button onclick="filterStatus('帰省中')" class="filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition">🚄 帰省中</button>
+            <button onclick="filterStatus('連絡不可')" class="filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition">📴 連絡不可</button>
+          </div>
+          <div class="text-xs text-slate-500 flex gap-3">
+            <span>🏠 在宅: <span id="stat-home" class="font-bold text-emerald-600">0</span>名</span>
+            <span>🚗 外出・他: <span id="stat-away" class="font-bold text-indigo-600">0</span>名</span>
+          </div>
+        </div>
+
+        <!-- メンバー状況カードグリッド -->
+        <div id="viewer-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- JSで動的に追加されます -->
+          <div class="col-span-full text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100">
+            <i class="fa-solid fa-spinner animate-spin text-3xl text-indigo-500 mb-3 block"></i>
+            <p class="text-slate-500 font-medium text-sm">最新データを同期しています...</p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="bg-slate-100 border-t border-slate-200 py-6 text-center text-slate-500 text-xs mt-12">
+    <div class="max-w-6xl mx-auto px-4 space-y-2">
+      <p>リアルタイム予定回覧システム &copy; 2026 | 自動更新中</p>
+      <p class="text-[10px] text-slate-400">ブラウザタブを閉じると自動的に「閲覧中リスト」から退出します。</p>
+    </div>
+  </footer>
+
+  <!-- Firebase SDK のインポート -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, onSnapshot, query, addDoc, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- Firebase設定環境初期化 ---
+    const firebaseConfig = JSON.parse(__firebase_config);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'presence-circular-app';
+
+    // 内部ステート
+    let user = null;
+    let members = [];
+    let activeUsers = [];
+    let currentFilter = 'all';
+    let isAdminMode = false;
+    
+    // システム定数
+    const ADMIN_PASS_HASH = "admin"; // 簡易パスワード (クライアントサイドでの照合用)
+
+    // DOM要素の取得
+    const myUserIdEl = document.getElementById('my-user-id');
+    const toggleModeBtn = document.getElementById('toggle-mode-btn');
+    const toggleModeText = document.getElementById('toggle-mode-text');
+    const currentModeBadge = document.getElementById('current-mode-badge');
+    const modeTitle = document.getElementById('mode-title');
+    const modeDesc = document.getElementById('mode-desc');
+    const loginSection = document.getElementById('login-section');
+    const adminView = document.getElementById('admin-view');
+    const viewerView = document.getElementById('viewer-view');
+    const alertBox = document.getElementById('alert-box');
+    const alertMessage = document.getElementById('alert-message');
+    const globalLastUpdated = document.getElementById('global-last-updated');
+    const activeUsersList = document.getElementById('active-users-list');
+    const activeCount = document.getElementById('active-count');
+    const viewerGrid = document.getElementById('viewer-grid');
+    const adminMembersContainer = document.getElementById('admin-members-container');
+    const addMemberForm = document.getElementById('add-member-form');
+    const adminPasswordInput = document.getElementById('admin-password');
+    const loginSubmitBtn = document.getElementById('login-submit-btn');
+
+    // 統計要素
+    const statHome = document.getElementById('stat-home');
+    const statAway = document.getElementById('stat-away');
+
+    // ============================================
+    // 1. Firebase 認証と初期設定 (RULE 3)
+    // ============================================
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Authentication failed:", error);
+        showAlert("認証の初期化に失敗しました。再読み込みしてください。");
+      }
+    };
+
+    // 認証監視
+    onAuthStateChanged(auth, (authUser) => {
+      if (authUser) {
+        user = authUser;
+        myUserIdEl.textContent = user.uid;
+        
+        // ユーザーが有効になったので、Firestoreへの書き込みと監視を開始
+        startPresenceTracking();
+        startDataSync();
+      }
+    });
+
+    // ============================================
+    // 2. 閲覧中（アクティブユーザー）トラッキング (RULE 1 & 3)
+    // ============================================
+    let presenceInterval = null;
+
+    async function startPresenceTracking() {
+      if (!user) return;
+      
+      const presenceDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'presence', user.uid);
+      
+      const updatePresence = async () => {
+        try {
+          await setDoc(presenceDocRef, {
+            userId: user.uid,
+            lastActive: new Date(),
+            device: navigator.userAgent.includes('Mobile') ? 'モバイル' : 'PC'
+          }, { merge: true });
+        } catch (e) {
+          console.error("Error updating presence:", e);
+        }
+      };
+
+      // 最初の一回の更新
+      await updatePresence();
+
+      // 以降 20秒ごとに生存信号を更新
+      presenceInterval = setInterval(updatePresence, 20000);
+
+      // ウィンドウを閉じる・離れるときにプレゼンスドキュメントを消去
+      window.addEventListener('beforeunload', async () => {
+        try {
+          await deleteDoc(presenceDocRef);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    // ============================================
+    // 3. データ監視 (リアルタイム同期 - RULE 1 & 2)
+    // ============================================
+    function startDataSync() {
+      if (!user) return;
+
+      // 3.1 メンバーデータの監視
+      const membersQuery = collection(db, 'artifacts', appId, 'public', 'data', 'members');
+      onSnapshot(membersQuery, (snapshot) => {
+        const list = [];
+        snapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // クライアント側で並び替え (新着順)
+        members = list.sort((a, b) => {
+          const tA = a.updatedAt?.seconds || 0;
+          const tB = b.updatedAt?.seconds || 0;
+          return tB - tA;
+        });
+        
+        renderStatusBoard();
+        renderAdminPanel();
+        updateStats();
+        updateLastGlobalTime();
+      }, (error) => {
+        console.error("Members sync error:", error);
+        showAlert("メンバー情報の読み込みでエラーが発生しました。");
+      });
+
+      // 3.2 閲覧中ユーザーのリアルタイム監視
+      const presenceQuery = collection(db, 'artifacts', appId, 'public', 'data', 'presence');
+      onSnapshot(presenceQuery, (snapshot) => {
+        const users = [];
+        const now = Date.now();
+        
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.lastActive) {
+            const lastActiveMs = data.lastActive.toDate ? data.lastActive.toDate().getTime() : new Date(data.lastActive).getTime();
+            if (now - lastActiveMs < 60000) {
+              users.push(data);
+            }
+          }
+        });
+        
+        activeUsers = users;
+        renderActiveUsers();
+      }, (error) => {
+        console.error("Presence sync error:", error);
+      });
+    }
+
+    // ============================================
+    // 4. 表示レンダリング
+    // ============================================
+
+    // 回覧画面（詳細なステータスカード）の描画
+    function renderStatusBoard() {
+      viewerGrid.innerHTML = '';
+      
+      const filtered = members.filter(m => {
+        if (currentFilter === 'all') return true;
+        return m.status === currentFilter;
+      });
+
+      if (filtered.length === 0) {
+        viewerGrid.innerHTML = `
+          <div class="col-span-full text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-slate-400 text-sm">該当するメンバーはいません。</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(m => {
+        const statusColors = getStatusColors(m.status);
+        const relativeTime = formatRelativeTime(m.updatedAt);
+        
+        const card = document.createElement('div');
+        card.className = `bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md hover:border-slate-200`;
+        
+        card.innerHTML = `
+          <div>
+            <!-- ヘッダー部分：氏名とメインステータス -->
+            <div class="flex justify-between items-start mb-4">
+              <div class="space-y-1">
+                <h4 class="text-xl font-bold text-slate-800 tracking-tight">${escapeHtml(m.name)}</h4>
+                <p class="text-xs text-slate-400 flex items-center gap-1">
+                  <i class="fa-regular fa-clock"></i>
+                  更新: ${relativeTime}
+                </p>
+              </div>
+              <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold ${statusColors.badge}">
+                ${statusColors.icon} ${m.status}
+              </span>
+            </div>
+            
+            <!-- 詳細予定情報スペース -->
+            <div class="space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-100/80 text-sm">
+              <!-- 行き先 -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-5 text-slate-400 flex justify-center pt-0.5" title="どこへ">
+                  <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block font-semibold leading-none mb-0.5">どこへ (場所)</span>
+                  <span class="text-slate-700 font-medium">${m.destination ? escapeHtml(m.destination) : '<span class="text-slate-300">未設定</span>'}</span>
+                </div>
+              </div>
+
+              <!-- 時間帯 -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-5 text-slate-400 flex justify-center pt-0.5" title="何時から何時まで">
+                  <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block font-semibold leading-none mb-0.5">時間 (何時から何時まで)</span>
+                  <span class="text-slate-700 font-medium">${m.timeRange ? escapeHtml(m.timeRange) : '<span class="text-slate-300">未設定</span>'}</span>
+                </div>
+              </div>
+
+              <!-- 理由・詳細メモ -->
+              <div class="flex items-start gap-2.5">
+                <div class="w-5 text-slate-400 flex justify-center pt-0.5" title="理由">
+                  <i class="fa-solid fa-clipboard-question"></i>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block font-semibold leading-none mb-0.5">理由・用事</span>
+                  <p class="text-slate-700 font-medium leading-relaxed">${m.reason ? escapeHtml(m.reason) : '<span class="text-slate-300">未設定</span>'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        viewerGrid.appendChild(card);
+      });
+    }
+
+    // 管理画面（メンバーリスト・状況編集）の描画
+    function renderAdminPanel() {
+      adminMembersContainer.innerHTML = '';
+      
+      if (members.length === 0) {
+        adminMembersContainer.innerHTML = `
+          <p class="text-center text-slate-400 py-6 text-sm">登録されているメンバーはいません。上のフォームから登録してください。</p>
+        `;
+        return;
+      }
+
+      members.forEach(m => {
+        const card = document.createElement('div');
+        card.className = "p-5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col gap-4";
+        
+        card.innerHTML = `
+          <!-- 上段: メンバー名とメインステータス切り替え、削除ボタン -->
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-slate-200/50">
+            <div>
+              <h4 class="font-bold text-slate-800 text-lg">${escapeHtml(m.name)}</h4>
+              <p class="text-xs text-slate-400">更新: ${formatRelativeTime(m.updatedAt)}</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <select onchange="updateMemberField('${m.id}', 'status', this.value)" class="bg-white px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="在宅中" ${m.status === '在宅中' ? 'selected' : ''}>🏠 在宅中</option>
+                <option value="外出中" ${m.status === '外出中' ? 'selected' : ''}>🚗 外出中</option>
+                <option value="帰省中" ${m.status === '帰省中' ? 'selected' : ''}>🚄 帰省中</option>
+                <option value="連絡不可" ${m.status === '連絡不可' ? 'selected' : ''}>📴 連絡不可</option>
+              </select>
+
+              <button onclick="deleteMember('${m.id}')" class="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition" title="削除">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- 下段: 詳細入力フィールド (どこへ、理由、時間帯) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">📍 どこへ (行き先 / 場所)</label>
+              <input type="text" value="${escapeHtml(m.destination || '')}" placeholder="例: 自宅, 外出先" 
+                     onchange="updateMemberField('${m.id}', 'destination', this.value)"
+                     class="w-full bg-white px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">⏱ 時間帯 (目安)</label>
+              <input type="text" value="${escapeHtml(m.timeRange || '')}" placeholder="例: 13:00〜15:00 / 終日" 
+                     onchange="updateMemberField('${m.id}', 'timeRange', this.value)"
+                     class="w-full bg-white px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">💡 理由 / メモ (用事)</label>
+              <input type="text" value="${escapeHtml(m.reason || '')}" placeholder="例: 買い物、用事のため" 
+                     onchange="updateMemberField('${m.id}', 'reason', this.value)"
+                     class="w-full bg-white px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+          </div>
+        `;
+        adminMembersContainer.appendChild(card);
+      });
+    }
+
+    // 閲覧中ユーザーリストの描画
+    function renderActiveUsers() {
+      activeUsersList.innerHTML = '';
+      activeCount.textContent = `${activeUsers.length}人`;
+      
+      if (activeUsers.length === 0) {
+        activeUsersList.innerHTML = `<div class="text-center text-slate-400 py-4 text-xs">誰も接続していません</div>`;
+        return;
+      }
+
+      activeUsers.forEach(u => {
+        const isMe = u.userId === user?.uid;
+        const div = document.createElement('div');
+        div.className = `flex items-center justify-between p-2 rounded-xl text-xs transition-colors ${isMe ? 'bg-indigo-50 border border-indigo-100' : 'bg-slate-50'}`;
+        div.innerHTML = `
+          <div class="flex items-center gap-2 truncate">
+            <span class="relative flex h-2 w-2">
+              <span class="pulse-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="font-mono text-slate-700 truncate ${isMe ? 'font-bold' : ''}">
+              ${u.userId} ${isMe ? '(あなた)' : ''}
+            </span>
+          </div>
+          <span class="text-[10px] text-slate-400 px-1.5 py-0.5 rounded bg-slate-200/50 flex items-center gap-1">
+            <i class="fa-solid ${u.device === 'モバイル' ? 'fa-mobile-screen' : 'fa-laptop'}"></i>
+            ${u.device || 'Web'}
+          </span>
+        `;
+        activeUsersList.appendChild(div);
+      });
+    }
+
+    // ============================================
+    // 5. データ操作用関数 (管理者)
+    // ============================================
+
+    // メンバー登録処理
+    addMemberForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!user) return;
+
+      const nameInput = document.getElementById('new-name');
+      const statusSelect = document.getElementById('new-status');
+      const destinationInput = document.getElementById('new-destination');
+      const reasonInput = document.getElementById('new-reason');
+      const timeRangeInput = document.getElementById('new-time-range');
+
+      try {
+        const newMember = {
+          name: nameInput.value.trim(),
+          status: statusSelect.value,
+          destination: destinationInput.value.trim() || '',
+          reason: reasonInput.value.trim() || '',
+          timeRange: timeRangeInput.value.trim() || '',
+          updatedAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'members'), newMember);
+        
+        // フォームをリセット
+        nameInput.value = '';
+        destinationInput.value = '';
+        reasonInput.value = '';
+        timeRangeInput.value = '';
+        
+        showAlert("新規メンバーを登録しました！", "success");
+      } catch (error) {
+        console.error("Error adding member:", error);
+        showAlert("メンバーの追加に失敗しました。");
+      }
+    });
+
+    // メンバーの各フィールドを更新する汎用関数 (グローバル化)
+    window.updateMemberField = async function(id, field, value) {
+      if (!user) return;
+      try {
+        const memberRef = doc(db, 'artifacts', appId, 'public', 'data', 'members', id);
+        const updateData = {};
+        updateData[field] = value.trim ? value.trim() : value;
+        updateData['updatedAt'] = serverTimestamp();
+        
+        await updateDoc(memberRef, updateData);
+      } catch (e) {
+        console.error(e);
+        showAlert("データの保存に失敗しました。");
+      }
+    };
+
+    // メンバー削除
+    window.deleteMember = async function(id) {
+      if (!user) return;
+      if (!confirm("本当にこのメンバーを削除しますか？")) return;
+      
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', id));
+        showAlert("メンバーを削除しました。", "success");
+      } catch (e) {
+        console.error(e);
+        showAlert("削除に失敗しました。");
+      }
+    };
+
+    // ============================================
+    // 6. ユーティリティ・補助機能
+    // ============================================
+
+    // フィルター切替
+    window.filterStatus = function(status) {
+      currentFilter = status;
+      
+      const buttons = document.querySelectorAll('.filter-btn');
+      buttons.forEach(btn => {
+        btn.classList.remove('bg-slate-900', 'text-white', 'bg-indigo-100', 'text-indigo-800');
+        btn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+      });
+
+      const event = window.event;
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+        event.currentTarget.classList.add('bg-slate-900', 'text-white');
+      }
+
+      renderStatusBoard();
+    };
+
+    // 統計値の集計
+    function updateStats() {
+      let home = 0;
+      let away = 0;
+      members.forEach(m => {
+        if (m.status === '在宅中') home++;
+        else away++;
+      });
+      statHome.textContent = home;
+      statAway.textContent = away;
+    }
+
+    // 全体の最終更新時間の描画
+    function updateLastGlobalTime() {
+      if (members.length === 0) return;
+      const latest = members.reduce((latest, m) => {
+        if (!m.updatedAt) return latest;
+        const time = m.updatedAt.toDate ? m.updatedAt.toDate() : new Date(m.updatedAt);
+        return time > latest ? time : latest;
+      }, new Date(0));
+
+      if (latest.getTime() > 0) {
+        globalLastUpdated.textContent = formatDateTime(latest);
+      }
+    }
+
+    // ステータスに応じたスタイル配色
+    function getStatusColors(status) {
+      switch (status) {
+        case '在宅中':
+          return {
+            badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+            icon: '<i class="fa-solid fa-house-chimney text-emerald-500"></i>'
+          };
+        case '外出中':
+          return {
+            badge: 'bg-amber-50 text-amber-700 border border-amber-200',
+            icon: '<i class="fa-solid fa-car text-amber-500"></i>'
+          };
+        case '帰省中':
+          return {
+            badge: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+            icon: '<i class="fa-solid fa-train-subway text-indigo-500"></i>'
+          };
+        case '連絡不可':
+        default:
+          return {
+            badge: 'bg-rose-50 text-rose-700 border border-rose-200',
+            icon: '<i class="fa-solid fa-phone-slash text-rose-500"></i>'
+          };
+      }
+    }
+
+    // 時間フォーマッタ
+    function formatRelativeTime(firebaseTimestamp) {
+      if (!firebaseTimestamp) return '不明';
+      const date = firebaseTimestamp.toDate ? firebaseTimestamp.toDate() : new Date(firebaseTimestamp);
+      const diffMs = Date.now() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      if (diffMins < 1) return '今さっき';
+      if (diffMins < 60) return `${diffMins}分前`;
+      
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}時間前`;
+      
+      return formatDateTime(date);
+    }
+
+    function formatDateTime(date) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    // HTMLエスケープ (安全対策)
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // 警告メッセージ表示
+    function showAlert(message, type = 'error') {
+      alertBox.className = type === 'success' 
+        ? "bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-xl shadow-sm block"
+        : "bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm block";
+      
+      const icon = type === 'success' ? '<i class="fa-solid fa-circle-check text-emerald-500"></i>' : '<i class="fa-solid fa-circle-info text-red-500"></i>';
+      alertMessage.innerHTML = `<span class="mr-1.5">${icon}</span>${message}`;
+      
+      setTimeout(hideAlert, 5000);
+    }
+
+    window.hideAlert = function() {
+      alertBox.classList.add('hidden');
+    }
+
+    // ============================================
+    // 7. 管理モード / 回覧モード 切り替えインタラクション
+    // ============================================
+    toggleModeBtn.addEventListener('click', () => {
+      if (isAdminMode) {
+        switchToViewerMode();
+      } else {
+        loginSection.classList.toggle('hidden');
+        if (!loginSection.classList.contains('hidden')) {
+          adminPasswordInput.focus();
+        }
+      }
+    });
+
+    loginSubmitBtn.addEventListener('click', performLogin);
+    adminPasswordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') performLogin();
+    });
+
+    function performLogin() {
+      const pass = adminPasswordInput.value;
+      if (pass === ADMIN_PASS_HASH) {
+        switchToAdminMode();
+        adminPasswordInput.value = '';
+        loginSection.classList.add('hidden');
+        showAlert("管理者認証に成功しました！管理画面を開きます。", "success");
+      } else {
+        showAlert("パスワードが正しくありません。");
+      }
+    }
+
+    function switchToAdminMode() {
+      isAdminMode = true;
+      toggleModeText.textContent = "回覧モードに戻る";
+      toggleModeBtn.className = "bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2";
+      toggleModeBtn.innerHTML = '<i class="fa-solid fa-eye"></i> <span id="toggle-mode-text">回覧モードに戻る</span>';
+      
+      currentModeBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 mb-2";
+      currentModeBadge.innerHTML = '<i class="fa-solid fa-user-gear"></i> 現在：管理モード';
+      
+      modeTitle.textContent = "在宅状況・予定の管理";
+      modeDesc.textContent = "メンバー情報の変更（ステータス、どこへ、時間帯、理由など）を行えます。";
+
+      viewerView.classList.add('hidden');
+      adminView.classList.remove('hidden');
+    }
+
+    function switchToViewerMode() {
+      isAdminMode = false;
+      toggleModeBtn.className = "bg-white text-indigo-600 hover:bg-indigo-50 font-semibold text-sm px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2";
+      toggleModeBtn.innerHTML = '<i class="fa-solid fa-lock"></i> <span id="toggle-mode-text">管理画面へログイン</span>';
+      
+      currentModeBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2";
+      currentModeBadge.innerHTML = '<i class="fa-solid fa-eye"></i> 現在：回覧モード';
+
+      modeTitle.textContent = "みんなの在宅・予定一覧";
+      modeDesc.textContent = "「今どこにいるか」「理由」「時間帯」をリアルタイムで回覧・確認できます。";
+
+      adminView.classList.add('hidden');
+      viewerView.classList.remove('hidden');
+    }
+
+    initAuth();
+  </script>
+</body>
+</html>
