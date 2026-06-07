@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>在宅状況回覧・管理システム</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     /* アニメーション用の微調整 */
@@ -22,7 +20,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-  <!-- ヘッダー -->
   <header class="bg-indigo-600 text-white shadow-md">
     <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
@@ -35,7 +32,6 @@
         </div>
       </div>
       
-      <!-- ユーザー状態・モード切替 -->
       <div class="flex items-center gap-3">
         <span id="user-badge" class="bg-indigo-700 text-indigo-100 text-xs px-3 py-1.5 rounded-full font-mono flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-green-400"></span>
@@ -49,10 +45,8 @@
     </div>
   </header>
 
-  <!-- メインコンテンツ -->
   <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:py-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
     
-    <!-- 左側サイドバー: 現在の閲覧中ユーザー (アクティブユーザー) -->
     <section class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-fit">
       <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
         <h2 class="font-bold text-slate-700 flex items-center gap-2">
@@ -64,22 +58,19 @@
       <p class="text-xs text-slate-500 mb-4">このページをリアルタイムで開いているユーザーです。</p>
       
       <div id="active-users-list" class="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
-        <!-- アクティブユーザーがJSで挿入されます -->
         <div class="text-center text-slate-400 py-4 text-xs">確認中...</div>
       </div>
     </section>
 
-    <!-- 右側メインエリア: 回覧板 or 管理画面 -->
     <section class="lg:col-span-3 space-y-6">
       
-      <!-- エラー・通知メッセージ領域 -->
-      <div id="alert-box" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm">
+      <div id="alert-box" class="hidden border-l-4 p-4 rounded-r-xl shadow-sm">
         <div class="flex items-start">
-          <div class="flex-shrink-0 text-red-500">
+          <div class="flex-shrink-0">
             <i class="fa-solid fa-circle-info text-lg"></i>
           </div>
           <div class="ml-3">
-            <p id="alert-message" class="text-sm text-red-800 font-medium"></p>
+            <p id="alert-message" class="text-sm font-medium"></p>
           </div>
           <button onclick="hideAlert()" class="ml-auto text-slate-400 hover:text-slate-600">
             <i class="fa-solid fa-xmark"></i>
@@ -87,7 +78,6 @@
         </div>
       </div>
 
-      <!-- モード表示ヘッダー -->
       <div class="bg-gradient-to-r from-indigo-50 to-sky-50 rounded-2xl p-6 border border-indigo-100/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div id="current-mode-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
@@ -101,9 +91,6 @@
         </div>
       </div>
 
-      <!-- ============================================ -->
-      <!-- パスワード入力エリア（管理モード切替用） -->
-      <!-- ============================================ -->
       <div id="login-section" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-150 transition-all">
         <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
           <i class="fa-solid fa-key text-amber-500"></i> 管理画面ログイン
@@ -118,12 +105,7 @@
         <p class="text-xs text-slate-400 mt-2">※ 初期設定パスワードは「<span class="font-mono bg-slate-100 px-1 py-0.5 rounded">admin</span>」です。</p>
       </div>
 
-      <!-- ============================================ -->
-      <!-- 管理画面（管理者専用・初期非表示） -->
-      <!-- ============================================ -->
       <div id="admin-view" class="hidden space-y-6">
-        
-        <!-- メンバー新規追加フォーム -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <i class="fa-solid fa-user-plus text-indigo-500"></i> メンバーを新しく登録する
@@ -168,7 +150,6 @@
           </form>
         </div>
 
-        <!-- 登録メンバー管理・編集リスト -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -178,22 +159,15 @@
           </div>
 
           <div id="admin-members-container" class="space-y-4">
-            <!-- JSで動的に追加されます -->
             <div class="text-center text-slate-400 py-8">
               <i class="fa-solid fa-spinner animate-spin text-2xl text-indigo-500 mb-2 block"></i>
               メンバーデータをロード中...
             </div>
           </div>
         </div>
-
       </div>
 
-      <!-- ============================================ -->
-      <!-- 回覧画面（メイン閲覧用） -->
-      <!-- ============================================ -->
       <div id="viewer-view" class="space-y-6">
-        
-        <!-- 状況フィルター & 統計 -->
         <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <div class="flex flex-wrap gap-2">
             <button onclick="filterStatus('all')" class="filter-btn bg-slate-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition">すべて</button>
@@ -208,15 +182,12 @@
           </div>
         </div>
 
-        <!-- メンバー状況カードグリッド -->
         <div id="viewer-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- JSで動的に追加されます -->
           <div class="col-span-full text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100">
             <i class="fa-solid fa-spinner animate-spin text-3xl text-indigo-500 mb-3 block"></i>
             <p class="text-slate-500 font-medium text-sm">最新データを同期しています...</p>
           </div>
         </div>
-
       </div>
 
     </section>
@@ -229,7 +200,6 @@
     </div>
   </footer>
 
-  <!-- Firebase SDK のインポート -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -278,7 +248,7 @@
     const statAway = document.getElementById('stat-away');
 
     // ============================================
-    // 1. Firebase 認証と初期設定 (RULE 3)
+    // 1. Firebase 認証と初期設定
     // ============================================
     const initAuth = async () => {
       try {
@@ -306,7 +276,7 @@
     });
 
     // ============================================
-    // 2. 閲覧中（アクティブユーザー）トラッキング (RULE 1 & 3)
+    // 2. 閲覧中（アクティブユーザー）トラッキング
     // ============================================
     let presenceInterval = null;
 
@@ -344,7 +314,7 @@
     }
 
     // ============================================
-    // 3. データ監視 (リアルタイム同期 - RULE 1 & 2)
+    // 3. データ監視 (リアルタイム同期)
     // ============================================
     function startDataSync() {
       if (!user) return;
@@ -427,7 +397,6 @@
         
         card.innerHTML = `
           <div>
-            <!-- ヘッダー部分：氏名とメインステータス -->
             <div class="flex justify-between items-start mb-4">
               <div class="space-y-1">
                 <h4 class="text-xl font-bold text-slate-800 tracking-tight">${escapeHtml(m.name)}</h4>
@@ -441,9 +410,7 @@
               </span>
             </div>
             
-            <!-- 詳細予定情報スペース -->
             <div class="space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-100/80 text-sm">
-              <!-- 行き先 -->
               <div class="flex items-start gap-2.5">
                 <div class="w-5 text-slate-400 flex justify-center pt-0.5" title="どこへ">
                   <i class="fa-solid fa-location-dot"></i>
@@ -454,7 +421,6 @@
                 </div>
               </div>
 
-              <!-- 時間帯 -->
               <div class="flex items-start gap-2.5">
                 <div class="w-5 text-slate-400 flex justify-center pt-0.5" title="何時から何時まで">
                   <i class="fa-solid fa-hourglass-half"></i>
@@ -465,7 +431,6 @@
                 </div>
               </div>
 
-              <!-- 理由・詳細メモ -->
               <div class="flex items-start gap-2.5">
                 <div class="w-5 text-slate-400 flex justify-center pt-0.5" title="理由">
                   <i class="fa-solid fa-clipboard-question"></i>
@@ -498,7 +463,6 @@
         card.className = "p-5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col gap-4";
         
         card.innerHTML = `
-          <!-- 上段: メンバー名とメインステータス切り替え、削除ボタン -->
           <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-slate-200/50">
             <div>
               <h4 class="font-bold text-slate-800 text-lg">${escapeHtml(m.name)}</h4>
@@ -519,7 +483,6 @@
             </div>
           </div>
           
-          <!-- 下段: 詳細入力フィールド (どこへ、理由、時間帯) -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label class="block text-[10px] font-bold text-slate-500 mb-1">📍 どこへ (行き先 / 場所)</label>
@@ -724,61 +687,78 @@
       }
     }
 
-    // 時間フォーマッタ
+    // 時間フォーマッタ (相対時間)
     function formatRelativeTime(firebaseTimestamp) {
       if (!firebaseTimestamp) return '不明';
       const date = firebaseTimestamp.toDate ? firebaseTimestamp.toDate() : new Date(firebaseTimestamp);
-      const diffMs = Date.now() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMin = Math.floor(diffMs / 60000);
+
+      if (diffMin < 1) return 'たった今';
+      if (diffMin < 60) return `${diffMin}分前`;
       
-      if (diffMins < 1) return '今さっき';
-      if (diffMins < 60) return `${diffMins}分前`;
-      
-      const diffHours = Math.floor(diffMins / 60);
+      const diffHours = Math.floor(diffMin / 60);
       if (diffHours < 24) return `${diffHours}時間前`;
-      
+
       return formatDateTime(date);
     }
 
+    // 絶対時間表示フォーマッタ
     function formatDateTime(date) {
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const textH = String(date.getHours()).padStart(2, '0');
+      const textM = String(date.getMinutes()).padStart(2, '0');
+      return `${y}/${m}/${d} ${textH}:${textM}`;
     }
 
-    // HTMLエスケープ (安全対策)
+    // HTMLエスケープ（XSS対策）
     function escapeHtml(str) {
       if (!str) return '';
       return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    // 警告メッセージ表示
-    function showAlert(message, type = 'error') {
-      alertBox.className = type === 'success' 
-        ? "bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-xl shadow-sm block"
-        : "bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm block";
+    // アラート通知表示
+    function showAlert(message, type = "error") {
+      alertBox.classList.remove('hidden', 'bg-red-50', 'border-red-500', 'text-red-800', 'bg-emerald-50', 'border-emerald-500', 'text-emerald-800');
       
-      const icon = type === 'success' ? '<i class="fa-solid fa-circle-check text-emerald-500"></i>' : '<i class="fa-solid fa-circle-info text-red-500"></i>';
-      alertMessage.innerHTML = `<span class="mr-1.5">${icon}</span>${message}`;
+      if (type === "success") {
+        alertBox.classList.add('bg-emerald-50', 'border-emerald-500');
+        alertMessage.className = "text-sm text-emerald-800 font-medium";
+      } else {
+        alertBox.classList.add('bg-red-50', 'border-red-500');
+        alertMessage.className = "text-sm text-red-800 font-medium";
+      }
       
+      alertMessage.textContent = message;
+      // 5秒後に自動で閉じる
       setTimeout(hideAlert, 5000);
     }
 
+    // アラートを閉じる (グローバル化)
     window.hideAlert = function() {
       alertBox.classList.add('hidden');
-    }
+    };
 
     // ============================================
-    // 7. 管理モード / 回覧モード 切り替えインタラクション
+    // 7. モード・画面切り替え制御 (ログイン処理)
     // ============================================
+    
+    // ログイン・管理画面トグルボタンの挙動
     toggleModeBtn.addEventListener('click', () => {
       if (isAdminMode) {
-        switchToViewerMode();
+        // 管理モードからログアウト
+        isAdminMode = false;
+        applyModeUI();
       } else {
+        // パスワード入力エリアの表示・非表示トグル
         loginSection.classList.toggle('hidden');
         if (!loginSection.classList.contains('hidden')) {
           adminPasswordInput.focus();
@@ -786,54 +766,53 @@
       }
     });
 
-    loginSubmitBtn.addEventListener('click', performLogin);
+    // 認証ボタンクリック時の処理
+    loginSubmitBtn.addEventListener('click', handleLogin);
     adminPasswordInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') performLogin();
+      if (e.key === 'Enter') handleLogin();
     });
 
-    function performLogin() {
-      const pass = adminPasswordInput.value;
-      if (pass === ADMIN_PASS_HASH) {
-        switchToAdminMode();
-        adminPasswordInput.value = '';
+    function handleLogin() {
+      const inputPass = adminPasswordInput.value;
+      if (inputPass === ADMIN_PASS_HASH) {
+        isAdminMode = true;
         loginSection.classList.add('hidden');
-        showAlert("管理者認証に成功しました！管理画面を開きます。", "success");
+        adminPasswordInput.value = '';
+        applyModeUI();
+        showAlert("管理者としてログインしました。", "success");
       } else {
         showAlert("パスワードが正しくありません。");
       }
     }
 
-    function switchToAdminMode() {
-      isAdminMode = true;
-      toggleModeText.textContent = "回覧モードに戻る";
-      toggleModeBtn.className = "bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2";
-      toggleModeBtn.innerHTML = '<i class="fa-solid fa-eye"></i> <span id="toggle-mode-text">回覧モードに戻る</span>';
-      
-      currentModeBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 mb-2";
-      currentModeBadge.innerHTML = '<i class="fa-solid fa-user-gear"></i> 現在：管理モード';
-      
-      modeTitle.textContent = "在宅状況・予定の管理";
-      modeDesc.textContent = "メンバー情報の変更（ステータス、どこへ、時間帯、理由など）を行えます。";
-
-      viewerView.classList.add('hidden');
-      adminView.classList.remove('hidden');
+    // モードに基づいたUIの出し分け
+    function applyModeUI() {
+      if (isAdminMode) {
+        toggleModeBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> <span id="toggle-mode-text">回覧画面へ (ログアウト)</span>';
+        
+        currentModeBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 mb-2";
+        currentModeBadge.innerHTML = '<i class="fa-solid fa-user-shield"></i> 現在：管理モード';
+        
+        modeTitle.textContent = "メンバー状況の管理・編集";
+        modeDesc.textContent = "メンバーの追加・削除や、各メンバーのステータス・予定をリアルタイムに編集できます。";
+        
+        adminView.classList.remove('hidden');
+        viewerView.classList.add('hidden');
+      } else {
+        toggleModeBtn.innerHTML = '<i class="fa-solid fa-lock"></i> <span id="toggle-mode-text">管理画面へログイン</span>';
+        
+        currentModeBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2";
+        currentModeBadge.innerHTML = '<i class="fa-solid fa-eye"></i> 現在：回覧モード';
+        
+        modeTitle.textContent = "みんなの在宅・予定一覧";
+        modeDesc.textContent = "「今どこにいるか」「理由」「時間帯」をリアルタイムで回覧・確認できます。";
+        
+        adminView.classList.add('hidden');
+        viewerView.classList.remove('hidden');
+      }
     }
 
-    function switchToViewerMode() {
-      isAdminMode = false;
-      toggleModeBtn.className = "bg-white text-indigo-600 hover:bg-indigo-50 font-semibold text-sm px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2";
-      toggleModeBtn.innerHTML = '<i class="fa-solid fa-lock"></i> <span id="toggle-mode-text">管理画面へログイン</span>';
-      
-      currentModeBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2";
-      currentModeBadge.innerHTML = '<i class="fa-solid fa-eye"></i> 現在：回覧モード';
-
-      modeTitle.textContent = "みんなの在宅・予定一覧";
-      modeDesc.textContent = "「今どこにいるか」「理由」「時間帯」をリアルタイムで回覧・確認できます。";
-
-      adminView.classList.add('hidden');
-      viewerView.classList.remove('hidden');
-    }
-
+    // 初期化実行
     initAuth();
   </script>
 </body>
