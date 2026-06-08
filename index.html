@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>在宅状況回覧・管理システム</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @keyframes pulse-ring {
@@ -19,6 +21,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
+  <!-- ヘッダー -->
   <header class="bg-indigo-600 text-white shadow-md">
     <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
@@ -31,6 +34,7 @@
         </div>
       </div>
       
+      <!-- ユーザー状態・モード切替 -->
       <div class="flex items-center gap-3">
         <span id="user-badge" class="bg-indigo-700 text-indigo-100 text-xs px-3 py-1.5 rounded-full font-mono flex items-center gap-1.5">
           <span id="status-indicator-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
@@ -44,8 +48,10 @@
     </div>
   </header>
 
+  <!-- メインコンテンツ -->
   <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:py-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
     
+    <!-- 左側サイドバー: 閲覧中ユーザー一覧 -->
     <section class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-fit">
       <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
         <h2 class="font-bold text-slate-700 flex items-center gap-2">
@@ -54,25 +60,28 @@
         </h2>
         <span id="active-count" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded-full">0人</span>
       </div>
-      <p class="text-xs text-slate-500 mb-4">リアルタイムでページを開いているユーザーです。</p>
+      <p class="text-xs text-slate-500 mb-4">このシステムを同時に開いている端末（ユーザー）です。</p>
       
       <div id="active-users-list" class="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
         <div class="text-center text-slate-400 py-4 text-xs">確認中...</div>
       </div>
     </section>
 
+    <!-- 右側メインエリア -->
     <section class="lg:col-span-3 space-y-6">
       
+      <!-- システム重大エラー表示領域 -->
       <div id="critical-error-box" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm">
         <div class="flex">
           <div class="flex-shrink-0"><i class="fa-solid fa-triangle-exclamation text-red-500 text-lg"></i></div>
           <div class="ml-3">
-            <h3 class="text-sm font-bold text-red-800">⚠️ エラーが発生しました</h3>
+            <h3 class="text-sm font-bold text-red-800">⚠️ 接続エラーが発生しました</h3>
             <p id="critical-error-message" class="text-xs text-red-700 mt-1 font-mono whitespace-pre-wrap bg-white p-3 border rounded-lg shadow-inner"></p>
           </div>
         </div>
       </div>
 
+      <!-- トースター（一時通知）通知領域 -->
       <div id="alert-box" class="hidden border-l-4 p-4 rounded-r-xl shadow-sm">
         <div class="flex items-start">
           <div class="flex-shrink-0"><i class="fa-solid fa-circle-info text-lg"></i></div>
@@ -81,30 +90,35 @@
         </div>
       </div>
 
+      <!-- モード表示ヘッダー -->
       <div class="bg-gradient-to-r from-indigo-50 to-sky-50 rounded-2xl p-6 border border-indigo-100/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div id="current-mode-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
             <i class="fa-solid fa-eye"></i> 現在：回覧モード
           </div>
           <h2 id="mode-title" class="text-2xl font-black text-slate-800 tracking-tight">みんなの在宅・予定一覧</h2>
-          <p id="mode-desc" class="text-sm text-slate-600 mt-1">リアルタイムで回覧・確認できます。</p>
+          <p id="mode-desc" class="text-sm text-slate-600 mt-1">クラウドデータベースを通じて、すべての端末でリアルタイム同期されます。</p>
         </div>
         <div class="text-right text-xs text-slate-400" id="last-updated-container">
           最終更新: <span id="global-last-updated">-</span>
         </div>
       </div>
 
+      <!-- パスワード入力エリア -->
       <div id="login-section" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-150">
         <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
           <i class="fa-solid fa-key text-amber-500"></i> 管理画面ログイン
         </h3>
+        <p class="text-xs text-slate-500 mb-3">メンバーの追加、削除、情報の編集を行うための認証を行います。</p>
         <div class="flex flex-col sm:flex-row gap-3 max-w-md">
           <input type="password" id="admin-password" placeholder="パスワードを入力 (デフォルト: admin)" class="flex-grow px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm outline-none">
           <button id="login-submit-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-xl text-sm transition">認証</button>
         </div>
       </div>
 
+      <!-- 管理画面 -->
       <div id="admin-view" class="hidden space-y-6">
+        <!-- メンバー新規追加 -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <i class="fa-solid fa-user-plus text-indigo-500"></i> メンバーを新しく登録する
@@ -126,17 +140,17 @@
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">時間帯 (目安)</label>
-                <input type="text" id="new-time-range" placeholder="例: 9:00 〜 17:00" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="text" id="new-time-range" placeholder="例: 9:00 〜 17:00 / 終日" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">どこへ (場所)</label>
-                <input type="text" id="new-destination" placeholder="例: 自宅、東京本社" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="text" id="new-destination" placeholder="例: 自宅、東京本社、外出先" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">理由 / メモ</label>
-                <input type="text" id="new-reason" placeholder="例: リモートワーク" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">理由 / メモ (用事・詳細)</label>
+                <input type="text" id="new-reason" placeholder="例: 在宅ワーク、クライアントと商談" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
               </div>
             </div>
             <div class="flex justify-end pt-2">
@@ -147,14 +161,17 @@
           </form>
         </div>
 
+        <!-- 登録メンバー編集リスト -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <i class="fa-solid fa-user-gear text-indigo-500"></i> 各メンバーの状況を変更
           </h3>
+          <p class="text-xs text-slate-400 mb-4">ここで編集した内容はクラウドに即時保存され、すべての閲覧端末に反映されます。</p>
           <div id="admin-members-container" class="space-y-4"></div>
         </div>
       </div>
 
+      <!-- 回覧画面 -->
       <div id="viewer-view" class="space-y-6">
         <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <div class="flex flex-wrap gap-2">
@@ -170,10 +187,11 @@
           </div>
         </div>
 
+        <!-- グリッド -->
         <div id="viewer-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div id="loading-spinner" class="col-span-full text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100">
             <i class="fa-solid fa-spinner animate-spin text-3xl text-indigo-500 mb-3 block"></i>
-            <p class="text-slate-500 font-medium text-sm">最新データを同期しています...</p>
+            <p class="text-slate-500 font-medium text-sm">クラウドデータを同期しています...</p>
           </div>
         </div>
       </div>
@@ -181,12 +199,20 @@
     </section>
   </main>
 
+  <footer class="bg-slate-100 border-t border-slate-200 py-6 text-center text-slate-500 text-xs mt-12">
+    <div class="max-w-6xl mx-auto px-4 space-y-2">
+      <p>リアルタイム予定回覧システム &copy; 2026 | クラウド自動同期中</p>
+      <p class="text-[10px] text-slate-400">ブラウザタブを閉じると自動的に「今見ている人」から退出します。</p>
+    </div>
+  </footer>
+
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, updateDoc, collection, onSnapshot, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // ユーザー提供の確定Config
+    // 確定されたFirebaseのコンフィグ情報
     const firebaseConfig = {
       apiKey: "AIzaSyCX7dCllPAyxxwxdAKX1X5OhkAM6P_txMs",
       authDomain: "syusseki-7d0de.firebaseapp.com",
@@ -206,7 +232,7 @@
     let isAdminMode = false;
     let isOfflineDemoMode = false;
 
-    // DOM
+    // DOM要素の参照取得
     const statusIndicatorDot = document.getElementById('status-indicator-dot');
     const statusIndicatorText = document.getElementById('status-indicator-text');
     const viewerGrid = document.getElementById('viewer-grid');
@@ -217,72 +243,69 @@
     const criticalErrorMessage = document.getElementById('critical-error-message');
     const globalLastUpdated = document.getElementById('global-last-updated');
 
-    // 1. システム起動
+    // 1. システム起動 (認証とデータベース接続)
     const startSystem = async () => {
       try {
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // 認証状態の監視
+        // ログイン状態の確認
         onAuthStateChanged(auth, (authUser) => {
           if (authUser) {
             user = authUser;
             statusIndicatorDot.className = "w-2 h-2 rounded-full bg-green-400";
-            statusIndicatorText.textContent = `接続完了`;
+            statusIndicatorText.textContent = `接続中`;
+            
+            // クラウドデータの同期トラッキングの開始
             startPresenceTracking();
             startDataSync();
           }
         });
 
-        // 匿名ログイン
+        // 匿名ログインを実行 (全端末でセキュアに共有可能にするため)
         await signInAnonymously(auth);
 
       } catch (error) {
         console.error("Auth Error:", error);
-        showCriticalError(`【認証失敗】\n原因: ${error.message}\n\n※前回のAuthenticationの『匿名認証』の設定が保存されているか、今一度確認してください。`);
+        showCriticalError(`【接続エラー】\n${error.message}`);
+        startDemoMode();
       }
     };
 
-    // 2. リアルタイムデータ同期
+    // 2. クラウドリアルタイム双方向同期
     function startDataSync() {
       try {
+        // Firestoreデータベースの 'members' コレクションを監視
         const membersQuery = collection(db, 'members');
         
-        // データの受信を監視
         onSnapshot(membersQuery, (snapshot) => {
-          criticalErrorBox.classList.add('hidden'); // 成功したらエラーを消す
+          criticalErrorBox.classList.add('hidden'); // 通信成功時はエラー領域を非表示
           const list = [];
+          
           snapshot.forEach((doc) => {
             list.push({ id: doc.id, ...doc.data() });
           });
           
+          // 更新順に並び替え
           members = list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
           
+          // 各ビューを描画
           renderStatusBoard();
           renderAdminPanel();
           updateStats();
           updateLastGlobalTime();
         }, (error) => {
-          console.error("Firestore Database Error:", error);
-          
-          // ここで「同期しています」が止まる原因のメッセージを画面に表示
+          console.error("Database sync failed:", error);
           showCriticalError(
-            `【データベース同期エラー】\n` +
-            `コード: ${error.code}\n` +
-            `内容: ${error.message}\n\n` +
-            `💡 解決法:\n` +
-            `Firebase管理画面の左メニューから『Firestore Database』を開き、\n` +
-            `① データベース自体が作成されているか確認してください（まだなら作成ボタンを押す）。\n` +
-            `②『ルール』タブを開き、以下のように書き換えて『公開』ボタンを押してください。\n\n` +
-            `allow read, write: if true;`
+            `【データベース同期エラー】\n${error.message}\n\n` +
+            `💡 もしこの表示が出る場合は、Firebase管理画面のFirestore Database「ルール」タブで、\n` +
+            `一時的にallow read, write: if true; に設定されているかご確認ください。`
           );
-          
-          // フリーズを防ぐため、一時的にデモデータで画面を動かします
           startDemoMode();
         });
 
-        // 閲覧中ユーザーの監視
+        // 「今見ている人（アクティブ端末）」のクラウド上監視
         const presenceQuery = collection(db, 'presence');
         onSnapshot(presenceQuery, (snapshot) => {
           const users = [];
@@ -291,47 +314,56 @@
             const data = doc.data();
             if (data.lastActive) {
               const t = data.lastActive.toDate ? data.lastActive.toDate().getTime() : new Date(data.lastActive).getTime();
+              // 最終シグナルが1分以内の端末のみ生存とみなす
               if (now - t < 60000) users.push(data);
             }
           });
           activeUsers = users;
           renderActiveUsers();
-        }, (e) => console.log("Presence tracking blocked"));
+        }, (e) => console.log("Presence tracking offline."));
 
       } catch (e) {
-        showCriticalError("同期処理の初期化に失敗しました。");
+        showCriticalError("クラウド同期処理の起動に失敗しました。");
       }
     }
 
-    // 3. アクティブトラッキング
+    // 3. 自身の接続生存（プレゼンス）シグナルを定期送信
     async function startPresenceTracking() {
       if (isOfflineDemoMode || !user) return;
       try {
         const pRef = doc(db, 'presence', user.uid);
-        const update = () => setDoc(pRef, { userId: user.uid, lastActive: new Date(), device: navigator.userAgent.includes('Mobile') ? 'モバイル' : 'PC' }, { merge: true }).catch(e=>'');
+        const update = () => setDoc(pRef, { 
+          userId: user.uid, 
+          lastActive: new Date(), 
+          device: navigator.userAgent.includes('Mobile') ? 'モバイル' : 'PC' 
+        }, { merge: true }).catch(e=>'');
+        
         update();
-        setInterval(update, 25000);
+        setInterval(update, 25000); // 25秒ごとに生存信号を送信
       } catch(e){}
     }
 
-    // 💾 救済用：ローカルデモモード
+    // 救済機能: 通信エラー等でFirebaseに到達できない場合のデモ機能
     function startDemoMode() {
       isOfflineDemoMode = true;
       statusIndicatorDot.className = "w-2 h-2 rounded-full bg-amber-500 pulse-dot";
-      statusIndicatorText.textContent = "一時テスト(デモ)モード起動中";
+      statusIndicatorText.textContent = "一時テスト(デモ)モード";
       
       if(members.length === 0) {
         members = [
-          { id: "demo1", name: "テスト山田", status: "在宅中", destination: "自宅", timeRange: "9:00〜18:00", reason: "データベース接続設定中に表示されるサンプルです", updatedAt: new Date() }
+          { id: "demo1", name: "山田 太郎 (デモ)", status: "在宅中", destination: "自宅", timeRange: "9:00〜18:00", reason: "データベース接続エラーの際に表示されるデモデータです。", updatedAt: new Date() }
         ];
       }
       activeUsers = [{ userId: "あなた (LOCAL)", device: "PC", lastActive: new Date() }];
       renderAll();
     }
 
-    // 🖌️ レンダリング・UI操作
+    // ============================================
+    // 🖌️ ビューのレンダリング処理
+    // ============================================
+
+    // 回覧用メイングリッド描画
     function renderStatusBoard() {
-      // ローディングスピナーを消去
       const spinner = document.getElementById('loading-spinner');
       if (spinner) spinner.remove();
 
@@ -339,7 +371,11 @@
       const filtered = members.filter(m => currentFilter === 'all' || m.status === currentFilter);
 
       if (filtered.length === 0) {
-        viewerGrid.innerHTML = `<div class="col-span-full text-center py-12 bg-white rounded-2xl border text-slate-400 text-sm">表示できるメンバーがいません。上の「管理画面へログイン（pass: admin）」からメンバーを追加してください。</div>`;
+        viewerGrid.innerHTML = `
+          <div class="col-span-full text-center py-12 bg-white rounded-2xl border text-slate-400 text-sm">
+            表示できるメンバーがいません。上の「管理画面へログイン」からメンバーを追加・更新してください。
+          </div>
+        `;
         return;
       }
 
@@ -357,9 +393,9 @@
               <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${colors.badge}">${colors.icon} ${m.status}</span>
             </div>
             <div class="space-y-2 bg-slate-50 p-4 rounded-xl border text-sm">
-              <div><span class="text-[10px] text-slate-400 block font-bold">📍 どこへ</span><span class="text-slate-700 font-medium">${escapeHtml(m.destination) || '---'}</span></div>
-              <div><span class="text-[10px] text-slate-400 block font-bold">⏱ 時間帯</span><span class="text-slate-700 font-medium">${escapeHtml(m.timeRange) || '---'}</span></div>
-              <div><span class="text-[10px] text-slate-400 block font-bold">💡 理由 / メモ</span><p class="text-slate-700 font-medium">${escapeHtml(m.reason) || '---'}</p></div>
+              <div><span class="text-[10px] text-slate-400 block font-bold">📍 どこへ (場所)</span><span class="text-slate-700 font-medium">${escapeHtml(m.destination) || '---'}</span></div>
+              <div><span class="text-[10px] text-slate-400 block font-bold">⏱ 時間 (何時から何時まで)</span><span class="text-slate-700 font-medium">${escapeHtml(m.timeRange) || '---'}</span></div>
+              <div><span class="text-[10px] text-slate-400 block font-bold">💡 理由・用事</span><p class="text-slate-700 font-medium leading-relaxed">${escapeHtml(m.reason) || '---'}</p></div>
             </div>
           </div>
         `;
@@ -367,46 +403,82 @@
       });
     }
 
+    // 管理画面のリスト描画
     function renderAdminPanel() {
       adminMembersContainer.innerHTML = '';
+      
+      if (members.length === 0) {
+        adminMembersContainer.innerHTML = `
+          <p class="text-center text-slate-400 py-6 text-sm">登録されているメンバーはいません。新しく登録してください。</p>
+        `;
+        return;
+      }
+
       members.forEach(m => {
         const card = document.createElement('div');
-        card.className = "p-4 bg-slate-50 rounded-xl border flex flex-col gap-3";
+        card.className = "p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-3";
         card.innerHTML = `
-          <div class="flex justify-between items-center pb-2 border-b">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-200">
             <span class="font-bold text-slate-800">${escapeHtml(m.name)}</span>
             <div class="flex gap-2">
-              <select onchange="updateMemberField('${m.id}', 'status', this.value)" class="bg-white px-2 py-1 border rounded text-xs">
+              <select onchange="updateMemberField('${m.id}', 'status', this.value)" class="bg-white px-2 py-1 border rounded text-xs focus:ring-1 focus:ring-indigo-500 outline-none">
                 <option value="在宅中" ${m.status === '在宅中' ? 'selected' : ''}>🏠 在宅中</option>
                 <option value="外出中" ${m.status === '外出中' ? 'selected' : ''}>🚗 外出中</option>
                 <option value="帰省中" ${m.status === '帰省中' ? 'selected' : ''}>🚄 帰省中</option>
                 <option value="連絡不可" ${m.status === '連絡不可' ? 'selected' : ''}>📴 連絡不可</option>
               </select>
-              <button onclick="deleteMember('${m.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded text-xs"><i class="fa-solid fa-trash-can"></i></button>
+              <button onclick="deleteMember('${m.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded text-xs transition" title="このメンバーを削除">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-            <input type="text" value="${escapeHtml(m.destination)}" placeholder="場所" onchange="updateMemberField('${m.id}', 'destination', this.value)" class="p-1.5 border rounded">
-            <input type="text" value="${escapeHtml(m.timeRange)}" placeholder="時間" onchange="updateMemberField('${m.id}', 'timeRange', this.value)" class="p-1.5 border rounded">
-            <input type="text" value="${escapeHtml(m.reason)}" placeholder="理由" onchange="updateMemberField('${m.id}', 'reason', this.value)" class="p-1.5 border rounded">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-0.5">📍 どこへ</label>
+              <input type="text" value="${escapeHtml(m.destination)}" placeholder="場所を入力" onchange="updateMemberField('${m.id}', 'destination', this.value)" class="w-full p-1.5 bg-white border rounded focus:ring-1 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-0.5">⏱ 時間帯</label>
+              <input type="text" value="${escapeHtml(m.timeRange)}" placeholder="時間帯を入力" onchange="updateMemberField('${m.id}', 'timeRange', this.value)" class="w-full p-1.5 bg-white border rounded focus:ring-1 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-0.5">💡 理由・メモ</label>
+              <input type="text" value="${escapeHtml(m.reason)}" placeholder="理由を入力" onchange="updateMemberField('${m.id}', 'reason', this.value)" class="w-full p-1.5 bg-white border rounded focus:ring-1 focus:ring-indigo-500 outline-none">
+            </div>
           </div>
         `;
         adminMembersContainer.appendChild(card);
       });
     }
 
+    // 今見ている端末一覧の描画
     function renderActiveUsers() {
       activeUsersList.innerHTML = '';
       activeCount.textContent = `${activeUsers.length}人`;
+      
       activeUsers.forEach(u => {
+        const isMe = u.userId === user?.uid;
         const div = document.createElement('div');
-        div.className = "flex items-center justify-between p-2 bg-slate-50 rounded-lg text-xs";
-        div.innerHTML = `<span class="font-mono text-slate-600 truncate">👤 ${u.userId.substring(0,10)}...</span><span class="text-[10px] bg-slate-200 px-1 rounded">${u.device || 'PC'}</span>`;
+        div.className = "flex items-center justify-between p-2 bg-slate-50 border rounded-lg text-xs";
+        div.innerHTML = `
+          <span class="font-mono text-slate-600 truncate flex items-center gap-1.5">
+            <span class="pulse-dot inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+            ${isMe ? 'あなた' : '端末'} (${u.userId.substring(0,6)})
+          </span>
+          <span class="text-[10px] bg-slate-200 px-1 rounded flex items-center gap-1">
+            <i class="fa-solid ${u.device === 'モバイル' ? 'fa-mobile-screen' : 'fa-laptop'}"></i>
+            ${u.device || 'PC'}
+          </span>
+        `;
         activeUsersList.appendChild(div);
       });
     }
 
-    // メンバー追加処理
+    // ============================================
+    // 💾 CUD 操作 (データベース書き込み・リアルタイム連動)
+    // ============================================
+
+    // フォーム新規作成
     document.getElementById('add-member-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const d = {
@@ -424,29 +496,34 @@
           members.unshift(d);
           renderAll();
         } else {
+          // クラウドのコレクションに直接追加、監視しているすべての端末に即座に通知される
           await addDoc(collection(db, 'members'), d);
         }
         document.getElementById('add-member-form').reset();
-        showAlert("メンバーを登録しました", "success");
+        showAlert("新規メンバーを登録しました", "success");
       } catch(err) {
-        showAlert(`保存失敗: ${err.message}`);
+        showAlert(`保存に失敗しました: ${err.message}`);
       }
     });
 
+    // 変更即時セーブ処理
     window.updateMemberField = async function(id, field, value) {
       try {
         if (isOfflineDemoMode) {
           const m = members.find(x => x.id === id);
           if (m) { m[field] = value; m.updatedAt = new Date(); renderAll(); }
         } else {
-          const d = {}; d[field] = value; d['updatedAt'] = serverTimestamp();
+          const d = {}; 
+          d[field] = value; 
+          d['updatedAt'] = serverTimestamp(); // 更新時間をサーバー時間で記録
           await updateDoc(doc(db, 'members', id), d);
         }
-      } catch(err) { showAlert(`更新失敗: ${err.message}`); }
+      } catch(err) { showAlert(`データの更新に失敗しました: ${err.message}`); }
     };
 
+    // 削除処理
     window.deleteMember = async function(id) {
-      if (!confirm("本当に削除しますか？")) return;
+      if (!confirm("本当にこのメンバーを削除しますか？")) return;
       try {
         if (isOfflineDemoMode) {
           members = members.filter(x => x.id !== id);
@@ -454,39 +531,51 @@
         } else {
           await deleteDoc(doc(db, 'members', id));
         }
-        showAlert("削除しました", "success");
-      } catch(err) { showAlert(`削除失敗: ${err.message}`); }
+        showAlert("メンバー情報を削除しました", "success");
+      } catch(err) { showAlert(`データの削除に失敗しました: ${err.message}`); }
     };
 
-    // 便利関数群
+    // ============================================
+    // 🔧 便利ヘルパー群
+    // ============================================
     function renderAll() { renderStatusBoard(); renderAdminPanel(); updateStats(); }
     function showCriticalError(msg) { criticalErrorBox.classList.remove('hidden'); criticalErrorMessage.textContent = msg; }
     function escapeHtml(s) { return s ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
+    
+    // 在宅状況の統計算出
     function updateStats() {
       const home = members.filter(m => m.status === '在宅中').length;
       document.getElementById('stat-home').textContent = home;
       document.getElementById('stat-away').textContent = members.length - home;
     }
+
+    // 全体更新時間の記録
     function updateLastGlobalTime() {
       if(members.length > 0 && members[0].updatedAt) {
         const d = members[0].updatedAt.toDate ? members[0].updatedAt.toDate() : new Date(members[0].updatedAt);
         globalLastUpdated.textContent = d.toLocaleTimeString();
       }
     }
+
+    // 相対時間表示の最適化
     function formatRelativeTime(t) {
       if(!t) return '---';
       const d = t.toDate ? t.toDate() : new Date(t);
       const diff = Math.floor((new Date() - d) / 60000);
       return diff < 1 ? 'たった今' : diff < 60 ? `${diff}分前` : d.toLocaleTimeString();
     }
+
+    // 各ステータスのデザイン配色・絵文字定義
     function getStatusColors(s) {
       if(s==='在宅中') return {badge:'bg-emerald-50 text-emerald-700 border-emerald-200', icon:'🏠'};
       if(s==='外出中') return {badge:'bg-amber-50 text-amber-700 border-amber-200', icon:'🚗'};
       if(s==='帰省中') return {badge:'bg-indigo-50 text-indigo-700 border-indigo-200', icon:'🚄'};
       return {badge:'bg-rose-50 text-rose-700 border-rose-200', icon:'📴'};
     }
+
     window.filterStatus = function(s) { currentFilter = s; renderStatusBoard(); };
 
+    // 通知バーの表示制御
     function showAlert(message, type = "error") {
       const alertBox = document.getElementById('alert-box');
       const alertMessage = document.getElementById('alert-message');
@@ -503,7 +592,7 @@
     }
     window.hideAlert = function() { document.getElementById('alert-box').classList.add('hidden'); };
 
-    // モード切替管理
+    // 管理者モード切替処理
     const toggleModeBtn = document.getElementById('toggle-mode-btn');
     const loginSection = document.getElementById('login-section');
     toggleModeBtn.addEventListener('click', () => {
@@ -514,11 +603,15 @@
         loginSection.classList.toggle('hidden');
       }
     });
+
+    // パスワード判定
     document.getElementById('login-submit-btn').addEventListener('click', () => {
       if(document.getElementById('admin-password').value === 'admin') {
         isAdminMode = true; loginSection.classList.add('hidden'); applyModeUI();
-      } else { alert('パスワード不一致'); }
+        showAlert("管理者ログインに成功しました", "success");
+      } else { alert('パスワードが違います'); }
     });
+
     function applyModeUI() {
       document.getElementById('admin-view').classList.toggle('hidden', !isAdminMode);
       document.getElementById('viewer-view').classList.toggle('hidden', isAdminMode);
